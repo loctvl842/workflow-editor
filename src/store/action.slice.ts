@@ -1,4 +1,10 @@
-import { createAsyncThunk, createEntityAdapter, createSlice, EntityState } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createEntityAdapter,
+  createSlice,
+  EntityState,
+  Update,
+} from "@reduxjs/toolkit";
 import { RootState } from "@store";
 import { PaginatedResponse } from "@types";
 import axios from "axios";
@@ -71,6 +77,15 @@ export const fetchInitialActions = createAsyncThunk<PaginatedResponse<IAction>, 
     const filter = JSON.stringify({ where: { workflowId } });
     const res = await axios.get(`/api/v1/internal/actions?filter=${encodeURIComponent(filter)}`);
     return res.data;
+  }
+);
+
+export const updateAction = createAsyncThunk<any, Update<IAction, string>, { state: RootState }>(
+  "action/updateOne",
+  async ({ id, changes }, { getState }) => {
+    const { action } = getState();
+    const res = await axios.patch(`/api/v1/internal/actions/${id}`, changes);
+    actionAdapter.updateOne(action, { id, changes: res.data });
   }
 );
 

@@ -1,7 +1,7 @@
 import { useActionTemplates } from "@hooks/workflow/useActionTemplates";
 import CloseIcon from "@mui/icons-material/Close";
 import {
-    Box,
+  Box,
   Button,
   Checkbox,
   Dialog,
@@ -20,10 +20,40 @@ import {
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { IAction } from "@store/action.slice";
+import { IAction, updateAction } from "@store/action.slice";
 import _ from "lodash";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState, FormEventHandler } from "react";
 import SyntaxHighlighter from "react-syntax-highlighter";
+import { JsonEditor } from "react-jsondata-editor";
+import { AppDispatch } from "@store";
+import { useDispatch } from "react-redux";
+
+const EditableSyntaxHighlighter = ({ value, onChange }) => {
+  const [jsonString, setJsonString] = useState("");
+
+  useEffect(() => {
+    // Convert the JSON value to a string
+    setJsonString(JSON.stringify(value, null, 2));
+  }, [value]);
+
+  const editableRef = useRef<HTMLDivElement | null>(null);
+
+  const handleInput = (e: any) => {
+    const textContent = e.target.textContent;
+
+    const result = _.attempt(JSON.parse.bind(null, textContent));
+    if (!_.isError(result)) {
+      onChange(JSON.parse(e.target.textContent));
+    }
+  };
+
+  return (
+    <Box contentEditable ref={editableRef} onInput={handleInput}>
+      <SyntaxHighlighter language="javascript">{jsonString}</SyntaxHighlighter>
+      {/* <JsonEditor jsonObject={jsonString} onChange={setJsonString} /> */}
+    </Box>
+  );
+};
 
 interface ActionEditorProps {
   action: IAction;
@@ -32,6 +62,7 @@ interface ActionEditorProps {
 }
 
 export const ActionEditor = (props: ActionEditorProps) => {
+  const dispatch = useDispatch<AppDispatch>();
   const { action, open, onClose } = props;
   const templates = useActionTemplates();
   const actionTemplate = action.template;
@@ -64,21 +95,9 @@ export const ActionEditor = (props: ActionEditorProps) => {
       });
     };
 
-  // useEffect(() => {
-  //   console.log(formData);
-  // }, [formData]);
-  useEffect(() => {
-    console.log(formData.template);
-  }, [formData.template]);
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(formData);
-    // Validate the form data here before proceeding
-    // if (validateForm()) {
-    //   onSubmit(formData);
-    // } else {
-    //   console.error('Form validation failed');
-    // }
+    dispatch(updateAction({ id: action.id, changes: formData }));
   };
 
   return (
@@ -133,11 +152,21 @@ export const ActionEditor = (props: ActionEditorProps) => {
                 Object.keys(formData.template.inputValidator._type).map((key) => (
                   <div key={key} style={{ marginBottom: 16 }}>
                     {_.isObject(formData.input?.[key]) ? (
-                      <Box contentEditable={true}>
-                        <SyntaxHighlighter language="javascript">
-                          {JSON.stringify(formData.input?.[key], null, 2)}
-                        </SyntaxHighlighter>
-                      </Box>
+                      <>
+                        <Typography>{key}</Typography>
+                        <EditableSyntaxHighlighter
+                          value={formData.input?.[key]}
+                          onChange={(value: any) => {
+                            setFormData((prevData) => ({
+                              ...prevData,
+                              input: {
+                                ...prevData.input,
+                                [key]: value,
+                              },
+                            }));
+                          }}
+                        />
+                      </>
                     ) : (
                       <TextField
                         label={key}

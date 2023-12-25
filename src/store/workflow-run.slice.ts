@@ -2,6 +2,7 @@ import { createAsyncThunk, createEntityAdapter, createSlice, EntityState } from 
 import { RootState } from "@store";
 import axios from "axios";
 import { IAction } from "./action.slice";
+import { addLog } from "./log.slice";
 
 export interface IWorkflowRun {
   id: string;
@@ -30,7 +31,7 @@ const workflowRunSlice = createSlice({
       state.data = action.payload;
     });
     builder.addCase(triggerWorkflowRun.rejected, (state, action) => {
-      console.log(action);
+      state = action.payload;
     });
   },
 });
@@ -63,7 +64,7 @@ export const triggerWorkflowRun = createAsyncThunk<
   IWorkflowRun,
   { [key: string]: any },
   { state: RootState }
->("workflowRun/trigger", async (payload, { getState }) => {
+>("workflowRun/trigger", async (payload, { getState, rejectWithValue, dispatch }) => {
   const { workflowRun } = getState();
   try {
     const res = await axios.post(
@@ -72,7 +73,9 @@ export const triggerWorkflowRun = createAsyncThunk<
     );
     return res.data;
   } catch (err) {
-    console.log({err});
+    workflowRun.data.runErrors ??= [];
+    workflowRun.data.runErrors.push(err.response.data);
+    return rejectWithValue(workflowRun);
   }
 });
 
