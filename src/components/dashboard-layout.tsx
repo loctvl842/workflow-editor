@@ -5,11 +5,11 @@ import { AuthGuard } from "./auth-guard";
 import { DashboardNavbar } from "./dashboard-navbar";
 import { DashboardSidebar } from "./dashboard-sidebar";
 
-const DashboardLayoutRoot = styled("div")(({ theme }) => ({
+const DashboardLayoutRoot = styled(Box)(({ theme }) => ({
   display: "flex",
   flex: "1 1 auto",
   maxWidth: "100%",
-  // paddingTop: 64,
+  paddingTop: 64,
 }));
 
 export const DashboardLayout = (props) => {
@@ -19,7 +19,6 @@ export const DashboardLayout = (props) => {
 
   return (
     <AuthGuard>
-      <DashboardNavbar onSidebarOpen={() => setSidebarOpen(true)} />
       <DashboardLayoutRoot>
         <Box
           sx={{
@@ -32,6 +31,7 @@ export const DashboardLayout = (props) => {
           {children}
         </Box>
       </DashboardLayoutRoot>
+      <DashboardSidebar onClose={() => setSidebarOpen(false)} open={isSidebarOpen} />
     </AuthGuard>
   );
 };

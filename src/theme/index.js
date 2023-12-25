@@ -132,7 +132,7 @@ export const theme = createTheme({
     },
   },
   palette: {
-    neutral: {
+    common: {
       100: "#F3F4F6",
       200: "#E5E7EB",
       300: "#D1D5DB",
@@ -157,9 +157,9 @@ export const theme = createTheme({
     },
     divider: "#E6E8F0",
     primary: {
-      main: "#5048E5",
-      light: "#828DF8",
-      dark: "#3832A0",
+      main: "#6333E0",
+      light: "#7B70C2",
+      dark: "#3929A3",
       contrastText: "#FFFFFF",
     },
     secondary: {

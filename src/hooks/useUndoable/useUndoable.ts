@@ -1,3 +1,4 @@
+import { IAction } from "@store/action.slice";
 import { Dispatch, SetStateAction, useCallback, useReducer } from "react";
 import { Edge, Node } from "reactflow";
 import { reducer } from "./reducer";
@@ -23,7 +24,7 @@ const compileMutateOptions = (options: Options) => ({
 
 const useUndoable = <T = any>(
   initialPresent: T,
-  setNodes: Dispatch<SetStateAction<Node<{ label: string }, string>[]>>,
+  setNodes: Dispatch<SetStateAction<Node<IAction, string>[]>>,
   setEdges: Dispatch<SetStateAction<Edge<any>[]>>,
   options: Options = defaultOptions
 ): UseUndoable<T> => {

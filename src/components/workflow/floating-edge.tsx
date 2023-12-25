@@ -2,7 +2,14 @@ import { useCallback } from "react";
 import { getStraightPath, useStore } from "reactflow";
 import { getEdgeParams } from "./utils";
 
-export const FloatingEdge = ({ id, source, target, markerEnd = undefined, style = undefined }) => {
+export const FloatingEdge = ({
+  id,
+  source,
+  target,
+  markerEnd = undefined,
+  style = undefined,
+  label = undefined,
+}) => {
   const sourceNode = useStore(useCallback((store) => store.nodeInternals.get(source), [source]));
   const targetNode = useStore(useCallback((store) => store.nodeInternals.get(target), [target]));
 

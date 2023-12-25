@@ -1,289 +1,186 @@
-import { useEffect } from "react";
+import { ExpandLess, ExpandMore, StarBorder } from "@mui/icons-material";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import DraftsIcon from "@mui/icons-material/Drafts";
+import MenuIcon from "@mui/icons-material/Menu";
+import PolylineIcon from "@mui/icons-material/Polyline";
+import {
+  Box,
+  Collapse,
+  CssBaseline,
+  CSSObject,
+  Divider,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+  styled,
+  Theme,
+  Toolbar,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
+import MuiDrawer from "@mui/material/Drawer";
+import { AppDispatch, RootState } from "@store";
+import { fetchInitialWorkflow, selectAllWorkflows, IWorkflow } from "@store/workflow.slice";
+import Image from "next/image";
 import NextLink from "next/link";
-import { useRouter } from "next/router";
-import PropTypes from "prop-types";
-import { Box, Button, Divider, Drawer, Typography, useMediaQuery } from "@mui/material";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { ChartBar as ChartBarIcon } from "../icons/chart-bar";
-import { Cog as CogIcon } from "../icons/cog";
-import { Lock as LockIcon } from "../icons/lock";
-import { Selector as SelectorIcon } from "../icons/selector";
-import { ShoppingBag as ShoppingBagIcon } from "../icons/shopping-bag";
-import { User as UserIcon } from "../icons/user";
-import { UserAdd as UserAddIcon } from "../icons/user-add";
-import { Users as UsersIcon } from "../icons/users";
-import { XCircle as XCircleIcon } from "../icons/x-circle";
-// import { Logo } from "./logo";
-import { NavItem } from "./nav-item";
-import { RollerShades, Scanner, Share, FormatListBulleted } from "@mui/icons-material";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import "../utils/fontawesome";
-import { styled } from "@mui/material/styles";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-const itemsUser = [
-  {
-    href: "/",
-    icon: <LockIcon fontSize="small" />,
-    title: "Home",
-  },
-  {
-    href: "#",
-    icon: <FormatListBulleted fontSize="small" />,
-    title: "Diagnostic",
-    subItems: [
-      {
-        href: "/benhkhopgoi",
-        icon: <Share fontSize="small" />,
-        title: "Knee Osteoarthritis",
-      },
-    ],
-  },
-  {
-    href: "/historydiag",
-    icon: <UserIcon fontSize="small" />,
-    title: "History diagnostic",
-  },
-  {
-    href: "/register-service",
-    icon: <UserIcon fontSize="small" />,
-    title: "Register service",
-  },
-];
+const drawerWidth = 320;
 
-const itemsTenant = [
-  {
-    href: "/tenant",
-    icon: <LockIcon fontSize="small" />,
-    title: "Manage User",
-  },
-  {
-    href: "#",
-    icon: <FormatListBulleted fontSize="small" />,
-    title: "Diagnostic",
-    subItems: [
-      {
-        href: "/tenant/benhkhopgoi",
-        icon: <Share fontSize="small" />,
-        title: "Knee Osteoarthritis",
-      },
-    ],
-  },
-  {
-    href: "/tenant/historydiag",
-    icon: <UserIcon fontSize="small" />,
-    title: "History diagnostic",
-  },
-  {
-    href: "/tenant/managepayment",
-    icon: <CogIcon fontSize="small" />,
-    title: "Manage payment",
-  },
-  {
-    href: "/tenant/registerservice",
-    icon: <CogIcon fontSize="small" />,
-    title: "Register service",
-  },
-  {
-    href: "/tenant/about",
-    icon: <Scanner fontSize="small" />,
-    title: "About Us",
-  },
-];
+const openedMixin = (theme: Theme): CSSObject => ({
+  width: drawerWidth,
+  transition: theme.transitions.create("width", {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  }),
+  overflowX: "hidden",
+});
 
-const itemsAdmin = [
-  {
-    href: "/admin",
-    icon: <LockIcon fontSize="small" />,
-    title: "System Management",
+const closedMixin = (theme: Theme): CSSObject => ({
+  transition: theme.transitions.create("width", {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  overflowX: "hidden",
+  width: `calc(${theme.spacing(7)} + 1px)`,
+  [theme.breakpoints.up("sm")]: {
+    width: `calc(${theme.spacing(8)} + 1px)`,
   },
-  {
-    href: "#",
-    icon: <FormatListBulleted fontSize="small" />,
-    title: "Diagnostic",
-    subItems: [
-      {
-        href: "/admin/benhkhopgoi",
-        icon: <Share fontSize="small" />,
-        title: "Knee Osteoarthritis",
-      },
-    ],
-  },
-  {
-    href: "/admin/historydiag",
-    icon: <UserIcon fontSize="small" />,
-    title: "History diagnostic",
-  },
-  {
-    href: "/admin/managepayment",
-    icon: <CogIcon fontSize="small" />,
-    title: "Manage payment",
-  },
-];
+});
 
-export const DashboardSidebar = (props) => {
-  const { open, onClose, role } = props;
-  let items = [];
-  let homeRef = "/";
-  items = itemsUser;
-  if (role === "admin") {
-    items = itemsAdmin;
-    homeRef = "/admin";
-  } else if (role === "tenant") {
-    items = itemsTenant;
-    homeRef = "/tenant";
-  } else if (role === "user") {
-    items = itemsUser;
-    homeRef = "/";
-  }
+const DrawerHeader = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  padding: theme.spacing(0, 1),
+  // necessary for content to be below app bar
+  ...theme.mixins.toolbar,
+}));
 
-  const router = useRouter();
-  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"), {
-    defaultMatches: true,
-    noSsr: false,
-  });
+interface AppBarProps extends MuiAppBarProps {
+  open?: boolean;
+}
 
-  useEffect(
-    () => {
-      if (!router.isReady) {
-        return;
-      }
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== "open",
+})<AppBarProps>(({ theme, open }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  transition: theme.transitions.create(["width", "margin"], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+    transition: theme.transitions.create(["width", "margin"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
 
-      if (open) {
-        onClose?.();
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router.asPath]
-  );
+const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== "open" })(
+  ({ theme, open }) => ({
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+    boxSizing: "border-box",
+    ...(open && {
+      ...openedMixin(theme),
+      "& .MuiDrawer-paper": openedMixin(theme),
+    }),
+    ...(!open && {
+      ...closedMixin(theme),
+      "& .MuiDrawer-paper": closedMixin(theme),
+    }),
+  })
+);
 
-  const content = (
-    <>
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100%",
-        }}
-      >
-        <div>
-          <Box sx={{ p: 3 }}>
-            <NextLink href={homeRef}>
-              <Logo>
-                <img
-                  loading="lazy"
-                  src="https://cdn.builder.io/api/v1/image/assets/TEMP/48165f60-7317-48bd-a5db-8cd7eec18d98?apiKey=989a6631d9bb4bf5b8bb7d79bb088c53&"
-                  alt="Logo"
-                />
-                <Title>GMed AI</Title>
-              </Logo>
-            </NextLink>
-            <NextLink href={homeRef} passHref>
-              <a>
-                <Logo
-                  sx={{
-                    height: 42,
-                    width: 42,
-                  }}
-                />
-              </a>
-            </NextLink>
-          </Box>
-        </div>
-        <Divider
-          sx={{
-            borderColor: "#2D3748",
-            my: 3,
-          }}
-        />
-        <Box sx={{ flexGrow: 1 }}>
-          {items.map((item) => (
-            <>
-              <NavItem key={item.title} icon={item.icon} href={item.href} title={item.title} />
-              {item.subItems && (
-                <Box pl={2}>
-                  {item.subItems.map((subItem) => (
-                    <NavItem
-                      key={subItem.title}
-                      icon={subItem.icon}
-                      href={subItem.href}
-                      title={subItem.title}
-                    />
-                  ))}
-                </Box>
-              )}
-            </>
-          ))}
-        </Box>
-        <Divider sx={{ borderColor: "#2D3748" }} />
-      </Box>
-    </>
-  );
+export const DashboardSidebar = (props: any) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const workflows = useSelector<RootState, IWorkflow[]>((state) => selectAllWorkflows(state));
+  const theme = useTheme();
+  const [open, setOpen] = useState(false);
+  const [workflowOpen, setWorkflowOpen] = useState(false);
+  const handleWorkflowClick = () => {
+    if (!open) return;
+    setWorkflowOpen(!workflowOpen);
+  };
 
-  if (lgUp) {
-    return (
-      <Drawer
-        anchor="left"
-        open
-        PaperProps={{
-          sx: {
-            backgroundColor: "neutral.900",
-            color: "#FFFFFF",
-            width: 280,
-          },
-        }}
-        variant="permanent"
-      >
-        {content}
-      </Drawer>
-    );
-  }
+  const handleDrawerClick = () => {
+    setOpen((prev) => !prev);
+    setWorkflowOpen(!open);
+  };
+
+  useEffect(() => {
+    dispatch(fetchInitialWorkflow());
+  }, [dispatch]);
 
   return (
-    <Drawer
-      anchor="left"
-      onClose={onClose}
-      open={open}
-      PaperProps={{
-        sx: {
-          backgroundColor: "neutral.900",
-          color: "#FFFFFF",
-          width: 280,
-        },
-      }}
-      sx={{ zIndex: (theme) => theme.zIndex.appBar + 100 }}
-      variant="temporary"
-    >
-      {content}
-    </Drawer>
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+      <AppBar position="fixed">
+        <Toolbar
+          sx={(theme) => ({
+            backgroundColor: theme.palette.common[900],
+            display: "flex",
+            justifyContent: "space-between",
+          })}
+        >
+          <IconButton color="inherit" aria-label="open drawer" onClick={handleDrawerClick}>
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div">
+            <Image src="/static/loce.png" alt="logo" width={50} height={50}></Image>
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        variant="permanent"
+        open={open}
+        sx={(theme) => ({
+          backgroundColor: theme.palette.common[800],
+        })}
+      >
+        <DrawerHeader>
+          {/*   <IconButton onClick={handleDrawerClose}> */}
+          {/*     {theme.direction === "rtl" ? <ChevronRightIcon /> : <ChevronLeftIcon />} */}
+          {/*   </IconButton> */}
+        </DrawerHeader>
+        <Divider />
+
+        <List
+          sx={{ width: "100%", maxWidth: 360, bgcolor: "background.paper" }}
+          component="nav"
+          aria-labelledby="nested-list-subheader"
+        >
+          <ListItemButton onClick={handleWorkflowClick}>
+            <ListItemIcon>
+              <PolylineIcon />
+            </ListItemIcon>
+            <ListItemText primary="Workflow" />
+            {workflowOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+          <Collapse in={workflowOpen} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+              {workflows &&
+                workflows.map((workflow) => (
+                  <NextLink key={workflow.id} href={`/workflow/${workflow.id}`} passHref>
+                    <ListItemButton sx={{ pl: 4 }}>
+                      <ListItemText primary={workflow.code} />
+                    </ListItemButton>
+                  </NextLink>
+                ))}
+            </List>
+          </Collapse>
+        </List>
+      </Drawer>
+    </Box>
   );
 };
-
-DashboardSidebar.propTypes = {
-  onClose: PropTypes.func,
-  open: PropTypes.bool,
-  role: PropTypes.string,
-};
-
-const Title = styled("div")(({ theme }) => ({
-  // color: "var(--black, #000)",
-  color: "#fff",
-  textShadow: "0px 4px 4px rgba(0, 0, 0, 0.25)",
-  alignSelf: "center",
-  whiteSpace: "nowrap",
-  margin: "auto 0",
-  font: "600 24px Roboto, sans-serif",
-  [theme.breakpoints.down("md")]: {
-    whiteSpace: "initial",
-  },
-}));
-
-const Logo = styled("button")(({ theme }) => ({
-  alignSelf: "center",
-  display: "flex",
-  alignItems: "flex-start",
-  backgroundColor: "rgba(0,0,0,0)",
-  border: "none",
-  outline: "none",
-  cursor: "pointer",
-  gap: 7,
-}));
